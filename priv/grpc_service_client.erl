@@ -16,32 +16,66 @@
 -define(PROTO_MODULE, '{{pb_module}}').
 -define(MARSHAL(T), fun(I) -> ?PROTO_MODULE:encode_msg(I, T) end).
 -define(UNMARSHAL(T), fun(I) -> ?PROTO_MODULE:decode_msg(I, T) end).
--define(DEF(Path, Input, Output, MessageType),
+-define(DEF(Path, Req, Resp, MessageType),
         #{path => Path,
           service =>?SERVICE,
           message_type => MessageType,
-          marshal => ?MARSHAL(Input),
-          unmarshal => ?UNMARSHAL(Output)}).
+          marshal => ?MARSHAL(Req),
+          unmarshal => ?UNMARSHAL(Resp)}).
 
 {{#methods}}
+{{^input_stream}}{{^output_stream}}
 -spec {{method}}({{pb_module}}:{{input}}())
     -> {ok, {{pb_module}}:{{output}}(), grpc:metadata()}
      | {error, term()}.
-{{method}}(Input) ->
-    {{method}}(Input, #{}, #{}).
+{{method}}(Req) ->
+    {{method}}(Req, #{}, #{}).
 
 -spec {{method}}({{pb_module}}:{{input}}(), grpc:options())
     -> {ok, {{pb_module}}:{{output}}(), grpc:metadata()}
      | {error, term()}.
-{{method}}(Input, Options) ->
-    {{method}}(Input, #{}, Options).
+{{method}}(Req, Options) ->
+    {{method}}(Req, #{}, Options).
 
 -spec {{method}}({{pb_module}}:{{input}}(), grpc:metadata(), grpc_client:options())
     -> {ok, {{pb_module}}:{{output}}(), grpc:metadata()}
      | {error, term()}.
-{{method}}(Input, Metadata, Options) ->
+{{method}}(Req, Metadata, Options) ->
     grpc_client:unary(?DEF(<<"/{{unmodified_service_name}}/{{unmodified_method}}">>,
                            {{input}}, {{output}}, <<"{{message_type}}">>),
-                      Input, Metadata, Options).
+                      Req, Metadata, Options).
+{{/output_stream}}{{/input_stream}}
+{{^input_stream}}{{#output_stream}}
+-spec {{method}}(grpc_client:options())
+    -> {ok, grpc_client:grpcstream()}
+     | {error, term()}.
 
+{{method}}(Options) ->
+    {{method}}(#{}, Options).
+
+-spec {{method}}(grpc:metadata(), grpc_client:options())
+    -> {ok, grpc_client:grpcstream()}
+     | {error, term()}.
+
+{{method}}(Metadata, Options) ->
+    grpc_client:open_stream(?DEF(<<"/{{unmodified_service_name}}/{{unmodified_method}}">>,
+                                 {{input}}, {{output}}, <<"{{message_type}}">>),
+                            Metadata, Options).
+{{/output_stream}}{{/input_stream}}
+{{#input_stream}}
+-spec {{method}}(grpc_client:options())
+    -> {ok, grpc_client:grpcstream()}
+     | {error, term()}.
+
+{{method}}(Options) ->
+    {{method}}(#{}, Options).
+
+-spec {{method}}(grpc:metadata(), grpc_client:options())
+    -> {ok, grpc_client:grpcstream()}
+     | {error, term()}.
+{{method}}(Metadata, Options) ->
+    grpc_client:open_stream(?DEF(<<"/{{unmodified_service_name}}/{{unmodified_method}}">>,
+                                 {{input}}, {{output}}, <<"{{message_type}}">>),
+                            Metadata, Options).
+{{/input_stream}}
 {{/methods}}
