@@ -33,12 +33,7 @@ init(State) ->
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
-    Apps = case rebar_state:current_app(State) of
-               undefined ->
-                   rebar_state:project_apps(State);
-               AppInfo ->
-                   [AppInfo]
-           end,
+    Apps = rebar_state:project_apps(State),
     {Options, _} = rebar_state:command_parsed_args(State),
     lists:foreach(fun(AppInfo) ->
         handle_app(AppInfo, Options, State)
@@ -82,7 +77,6 @@ handle_app(AppInfo, Options, State) ->
     ProtoFiles = lists:append(
                    [filelib:wildcard(filename:join([BaseDir, D, "*.proto"]))
                     || D <- ProtosDirs]),
-
     Type = case proplists:get_value(type, Options, undefined) of
                undefined ->
                    proplists:get_value(type, GrpcOpts, all);
